@@ -14,4 +14,8 @@ In this project we willbe making a game where players can scroll their neighborh
 
 ## D3.a: Core mechanics (token collection and crafting)
 
-Key technical challenge: Can you assemble a map-based user interface using the Leaflet mapping framework?
+- Add: Core gameplay mechanics: Merging, full map generation, caches with specific 2048-inspired value
+
+## D3.b
+
+- Add: Extra gameplay elements: Player movement, dynamic cache spawning, cache refreshing, and a win condition
