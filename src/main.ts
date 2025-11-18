@@ -159,6 +159,7 @@ function check_game_won(just_made: number) {
   }
 }
 
+// USE DIRECTION CONSTANTS FOR dir TO MOVE PLAYER
 function move_player(dir: Point) {
   playerPosition.lat += indexToCoord(dir.y);
   playerPosition.lng += indexToCoord(dir.x);
@@ -167,7 +168,7 @@ function move_player(dir: Point) {
   playerMarker.bindTooltip("That's you!");
   playerMarker.addTo(map);
 }
-
+// DIRECTIONAL CONSTANTS
 const DIRECTION_RIGHT: Point = {
   x: 1,
   y: 0,
@@ -185,6 +186,7 @@ const DIRECTION_DOWN: Point = {
   y: -1,
 };
 
+// Buttons synced to player movement
 const LEFT = document.createElement("button");
 LEFT.innerHTML = "MOVE: Left";
 LEFT.addEventListener("click", () => {
