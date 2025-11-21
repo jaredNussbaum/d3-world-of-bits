@@ -50,7 +50,7 @@ const map = leaflet.map(mapDiv, {
   zoomControl: false,
   scrollWheelZoom: false,
 });
-
+const cellMap = new Map<string, number>();
 map.on("moveend", () => {
   generateCells();
 });
@@ -84,10 +84,15 @@ function spawnCache(i: number, j: number) {
     pointIndexToCoord({ x: i + 1, y: j + 1 }),
   ]);
 
-  let cachePoints = Math.pow(
-    2,
-    Math.floor(luck([i, j, "initialValue"].toString()) * 4),
-  );
+  let storedCachePoints = cellMap.get(pointIndexToString({ x: i, y: j }));
+  if (storedCachePoints == 0) return;
+  if (storedCachePoints == undefined) {
+    storedCachePoints = Math.pow(
+      2,
+      Math.floor(luck([i, j, "init"].toString()) * 4),
+    );
+  }
+  let cachePoints = storedCachePoints as number;
 
   // Add a rectangle to the map to represent the cache
   const rect = leaflet.rectangle(bounds);
@@ -104,6 +109,7 @@ function spawnCache(i: number, j: number) {
       playerPoints = cachePoints;
       rect.remove();
       statusPanelDiv.innerHTML = `You are carrying: ${playerPoints}`;
+      cachePoints = 0;
     } else if (playerPoints == cachePoints) {
       cachePoints *= 2;
       playerPoints = 0;
@@ -111,6 +117,7 @@ function spawnCache(i: number, j: number) {
       check_game_won(cachePoints);
     }
     tooltip.setContent(cachePoints.toString());
+    saveCell({ x: i, y: j }, cachePoints);
   });
 }
 
@@ -135,6 +142,10 @@ function distance_to_player(i: number, j: number) {
   const dx = i - playerPoint.x;
   const dy = j - playerPoint.y;
   return Math.sqrt((dx ** 2) + (dy ** 2));
+}
+
+function pointIndexToString(p: Point) {
+  return p.x.toString() + " " + p.y.toString();
 }
 
 function indexToCoord(i: number) {
@@ -168,6 +179,12 @@ function move_player(dir: Point) {
   playerMarker.bindTooltip("That's you!");
   playerMarker.addTo(map);
 }
+
+
+function saveCell(p: Point, cachePoints: number) {
+  cellMap.set(pointIndexToString(p), cachePoints);
+}
+
 // DIRECTIONAL CONSTANTS
 const DIRECTION_RIGHT: Point = {
   x: 1,
