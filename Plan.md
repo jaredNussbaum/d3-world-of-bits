@@ -19,3 +19,7 @@ In this project we willbe making a game where players can scroll their neighborh
 ## D3.b
 
 - Add: Extra gameplay elements: Player movement, dynamic cache spawning, cache refreshing, and a win condition
+
+## D3.c
+
+- Add: Memory system for caches: When the camera moves away from caches, make sure they remain in whatever state they were in when the camera left, reload that state when the camera returns
