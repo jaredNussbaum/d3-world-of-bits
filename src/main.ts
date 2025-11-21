@@ -180,7 +180,6 @@ function move_player(dir: Point) {
   playerMarker.addTo(map);
 }
 
-
 function saveCell(p: Point, cachePoints: number) {
   cellMap.set(pointIndexToString(p), cachePoints);
 }
