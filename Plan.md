@@ -23,3 +23,7 @@ In this project we willbe making a game where players can scroll their neighborh
 ## D3.c
 
 - Add: Memory system for caches: When the camera moves away from caches, make sure they remain in whatever state they were in when the camera left, reload that state when the camera returns
+
+## D3.d
+
+- Add: Geolocational movement, save/load functionality, options tab to restart the game, or swap between button-based and geolocational movement

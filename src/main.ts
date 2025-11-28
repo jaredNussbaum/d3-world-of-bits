@@ -28,6 +28,10 @@ const buttonPanelDiv = document.createElement("div");
 buttonPanelDiv.id = "buttonPanel";
 document.body.append(buttonPanelDiv);
 
+const settingsPanelDiv = document.createElement("div");
+buttonPanelDiv.id = "settingsPanel";
+document.body.append(settingsPanelDiv);
+
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
   36.997936938057016,
@@ -50,7 +54,7 @@ const map = leaflet.map(mapDiv, {
   zoomControl: false,
   scrollWheelZoom: false,
 });
-const cellMap = new Map<string, number>();
+let cellMap = new Map<string, number>();
 map.on("moveend", () => {
   generateCells();
 });
@@ -76,6 +80,7 @@ statusPanelDiv.innerHTML = "No points yet...";
 
 const playerPosition = CLASSROOM_LATLNG;
 
+loadSaveState();
 // Add caches to the map by cell numbers
 function spawnCache(i: number, j: number) {
   // Convert cell numbers into lat/lng bounds
@@ -182,6 +187,8 @@ function move_player(dir: Point) {
 
 function saveCell(p: Point, cachePoints: number) {
   cellMap.set(pointIndexToString(p), cachePoints);
+  updateSaveState();
+  //
 }
 
 // DIRECTIONAL CONSTANTS
@@ -230,3 +237,144 @@ buttonPanelDiv.appendChild(LEFT);
 buttonPanelDiv.appendChild(RIGHT);
 buttonPanelDiv.appendChild(UP);
 buttonPanelDiv.appendChild(DOWN);
+
+// #######################################################
+// D3.d
+// #######################################################
+
+function updateSaveState() {
+  localStorage.setItem("playerInventory", playerPoints.toString());
+
+  localStorage.setItem(
+    "cellMap",
+    JSON.stringify(Array.from(cellMap.entries())),
+  );
+}
+
+function loadSaveState() {
+  const storedInventory = localStorage.getItem("playerInventory");
+  if (storedInventory) {
+    playerPoints = Number(storedInventory);
+    updateStatusPanelDiv();
+  }
+
+  const storedCellMap = localStorage.getItem("cellMap");
+  if (storedCellMap) {
+    cellMap = new Map(JSON.parse(storedCellMap));
+    generateCells();
+  }
+}
+
+function clearSaveState() {
+  localStorage.clear();
+  playerPoints = 0;
+  updateStatusPanelDiv();
+  cellMap = new Map();
+  generateCells();
+  updateSaveState();
+}
+
+loadSaveState();
+
+class PlayerNavigator {
+  position: leaflet.LatLng;
+  geolocationBased: boolean;
+  #watchID: number | null;
+  constructor(geolocationBased: boolean) {
+    this.position = CLASSROOM_LATLNG;
+    this.geolocationBased = geolocationBased;
+    this.#watchID = null;
+
+    // initialize watcher
+    if (this.geolocationBased) {
+      this.#createGeolocationWatcher();
+    }
+  }
+  setGeolocationBased(geolocationBased: boolean) {
+    this.geolocationBased = geolocationBased;
+    if (this.geolocationBased) {
+      // start watching player's geolocation
+      this.#createGeolocationWatcher();
+    } else {
+      // stop watching player's geolocation
+      navigator.geolocation.clearWatch(this.#watchID!);
+    }
+    updateMovementModeButtonText();
+  }
+  manuallyMovePlayer(delta: leaflet.LatLng) {
+    if (!this.geolocationBased) {
+      this.position.lat += delta.lat;
+      this.position.lng += delta.lng;
+      this.#updatePlayerMarker();
+    }
+  }
+  #createGeolocationWatcher() {
+    this.#watchID = navigator.geolocation.watchPosition(
+      (pos: GeolocationPosition) => {
+        this.position.lat = pos.coords.latitude;
+        this.position.lng = pos.coords.longitude;
+        this.#updatePlayerMarker();
+      },
+      () => {
+        // if it fails, go back to buttons
+        this.setGeolocationBased(false);
+      },
+    );
+  }
+  #updatePlayerMarker() {
+    playerMarker.remove();
+    playerMarker = leaflet.marker(this.position);
+    playerMarker.bindTooltip("That's you!");
+    playerMarker.addTo(map);
+    map.setView(this.position);
+  }
+}
+
+const playerNav = new PlayerNavigator(true);
+
+function updateMovementModeButtonText() {
+  movementModeButton.innerHTML = playerNav.geolocationBased
+    ? "Switch to Button Movement"
+    : "Switch to Geolocation Movement";
+}
+
+const newGameButton = document.createElement("button");
+newGameButton.id = "newGame";
+newGameButton.innerHTML = "New Game";
+newGameButton.addEventListener("click", clearSaveState);
+settingsPanelDiv.appendChild(newGameButton);
+
+function updateStatusPanelDiv() {
+  statusPanelDiv.innerHTML = `You are carrying: ${playerPoints}`;
+}
+
+const movementModeButton = document.createElement("button");
+movementModeButton.id = "movementMode";
+movementModeButton.addEventListener("click", () => {
+  playerNav.setGeolocationBased(!playerNav.geolocationBased);
+  updateMovementModeButtonText();
+  if (playerNav.geolocationBased) {
+    LEFT.disabled = true;
+    RIGHT.disabled = true;
+    UP.disabled = true;
+    DOWN.disabled = true;
+  } else {
+    LEFT.disabled = false;
+    RIGHT.disabled = false;
+    UP.disabled = false;
+    DOWN.disabled = false;
+  }
+});
+updateMovementModeButtonText();
+if (playerNav.geolocationBased) {
+  LEFT.disabled = true;
+  RIGHT.disabled = true;
+  UP.disabled = true;
+  DOWN.disabled = true;
+} else {
+  LEFT.disabled = false;
+  RIGHT.disabled = false;
+  UP.disabled = false;
+  DOWN.disabled = false;
+}
+settingsPanelDiv.appendChild(movementModeButton);
